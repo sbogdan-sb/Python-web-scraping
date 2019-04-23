@@ -10,9 +10,9 @@ import pymongo
 conn = 'mongodb://localhost:27017'
 client = pymongo.MongoClient(conn)
 
+######### Web scraping section #################
 
-
-# Function to gather multiple Mars facts and images
+# Function to gather multiple Mars facts and images from multiple web sites
 def scrape():
 
     # Create browser instance to use for web-scraping 
@@ -52,9 +52,9 @@ def scrape():
 
     soup = bs(html, 'html.parser')
 
-    mars_weather = soup.find('div', class_='js-tweet-text-container').p.text
+    mars_weather = soup.find('div', class_='js-tweet-text-container').p.text.split("hPapic")[0]
 
-
+    
     # Get Mars Facts
 
     mars_facts_url = 'https://space-facts.com/mars/'
@@ -68,7 +68,7 @@ def scrape():
     mars_facts_df = pd.read_html(str(table))[0]
     mars_facts_df.columns = ['Description', 'Value']
 
-    mars_facts_table_string = mars_facts_df.to_html(index=False)    .replace('<tr style="text-align: right;">','<tr style="text-align: center;">')
+    mars_facts_table_string = mars_facts_df.to_html(index=False).replace('<tr style="text-align: right;">','<tr style="text-align: center;">')
 
 
     # Get Mars Hemisphere Images
@@ -119,6 +119,7 @@ app = Flask(__name__)
 @app.route("/")
 def index():
 
+    # Create db connection and retrieve mars data dictionary
     db = client["mars_data_store"]
     mars_dict = db.mars_info.find_one()
 
@@ -134,6 +135,8 @@ def do_scrape():
 
     # Upsert the mars data to keep just the most current data set in the database
     db.mars_info.replace_one({}, mars_data, True)
+
+    # Refresh the html index page with the updated Mars data
     return redirect('/')
 
    
